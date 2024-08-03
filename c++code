@@ -1,0 +1,310 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+using namespace std;
+struct User {
+ string username;
+ string password;
+ string dob;
+ string accountNumber;
+ double balance;
+ int pin;
+};
+const int MAX_USERS = 100;
+User users[MAX_USERS];
+int userCount = 0;
+void loadUsers() {
+ ifstream infile("users.txt");
+ userCount = 0;
+ while (infile >> users[userCount].username >> users[userCount].password >>
+users[userCount].dob
+ >> users[userCount].accountNumber >> users[userCount].balance >>
+users[userCount].pin) {
+ userCount++;
+ }
+ infile.close();
+}
+void saveUsers() {
+ ofstream outfile("users.txt");
+ for (int i = 0; i < userCount; i++) {
+ outfile << users[i].username << " " << users[i].password << " " << users[i].dob <<
+" "
+ << users[i].accountNumber << " " << users[i].balance << " " << users[i].pin <<
+endl;
+ }
+ outfile.close();
+}
+bool authenticate(string username, string password) {
+ for (int i = 0; i < userCount; i++) {
+ if (users[i].username == username && users[i].password == password) {
+ return true;
+ }
+ }
+ return false;
+}
+int findUserIndex(string username) {
+ for (int i = 0; i < userCount; i++) {
+if (users[i].username == username) {
+ return i;
+ }
+ }
+ return -1;
+}
+void registerUser() {
+ if (userCount >= MAX_USERS) {
+ cout << "User limit reached. Cannot register more users.\n";
+ return;
+ }
+ string pinInput;
+ User newUser;
+ cout << "\nEnter username: ";
+ cin >> newUser.username;
+ cout << "Enter password: ";
+ cin >> newUser.password;
+ cout << "Enter date of birth (dd-mm-yyyy): ";
+ cin >> newUser.dob;
+ cout << "Enter account number: ";
+ cin >> newUser.accountNumber;
+ cout << "Set your 4-digit pin: ";
+ while (true) {
+ cin >> pinInput;
+ newUser.pin = stoi(pinInput);
+ if (newUser.pin >= 1000 && newUser.pin <= 9999) break;
+ else cout << "Invalid pin. Enter a 4-digit pin: ";
+ }
+ newUser.balance = 0.0;
+ users[userCount] = newUser;
+ userCount++;
+ saveUsers();
+ cout << "\nRegistration successful!\n\n";
+}
+void changeProfile(int userIndex) {
+ cout << "\nEnter new Username: ";
+ cin.ignore();
+ getline(cin, users[userIndex].username);
+ cout << "Enter new date of birth (dd-mm-yyyy): ";
+ cin >> users[userIndex].dob;
+ cout << "Profile updated successfully!\n";
+}
+void viewAccount(int userIndex) {
+ cout << "\nUsername: " << users[userIndex].username << endl;
+ cout << "Date of Birth: " << users[userIndex].dob << endl;
+ cout << "Account Number: " << users[userIndex].accountNumber << endl;
+ cout << "Balance: " << users[userIndex].balance << endl;
+}
+void changePin(int userIndex) {
+ string pinInput;
+ cout << "\nEnter new 4-digit pin: ";
+ while (true) {
+ cin >> pinInput;
+users[userIndex].pin = stoi(pinInput);
+ if (users[userIndex].pin >= 1000 && users[userIndex].pin <= 9999) break;
+ else cout << "Invalid pin. Enter a 4-digit pin: ";
+ }
+ cout << "Pin changed successfully!\n";
+}
+void deleteAccount(int userIndex) {
+ for (int i = userIndex; i < userCount - 1; i++) {
+ users[i] = users[i + 1];
+ }
+ userCount--;
+ saveUsers();
+ cout << "Account deleted successfully!\n";
+}
+void deposit(int userIndex) {
+ double amount;
+ cout << "\nEnter amount to deposit: ";
+ cin >> amount;
+ users[userIndex].balance += amount;
+ cout << "Deposit successful! New balance: " << users[userIndex].balance << endl;
+}
+void withdraw(int userIndex) {
+ double amount;
+ cout << "\nEnter amount to withdraw: ";
+ cin >> amount;
+ if (amount > users[userIndex].balance) {
+ cout << "Insufficient balance!\n";
+ }
+ else {
+ users[userIndex].balance -= amount;
+ cout << "Withdrawal successful! New balance: " << users[userIndex].balance << endl;
+ }
+}
+void loan(int userIndex) {
+ double amount;
+ cout << "\nEnter loan amount: ";
+ cin >> amount;
+ users[userIndex].balance += amount;
+ cout << "Loan successful! New balance: " << users[userIndex].balance << endl;
+}
+void payBills(int userIndex) {
+ double amount;
+ cout << "\nEnter bill amount: ";
+ cin >> amount;
+ if (amount > users[userIndex].balance) {
+ cout << "Insufficient balance!\n";
+ }
+ else {
+ users[userIndex].balance -= amount;
+ cout << "Bill payment successful! New balance: " << users[userIndex].balance <<
+endl;
+ }
+}void savingsAccount(int userIndex) {
+ double interestRate;
+ cout << "\nEnter annual interest rate (as a percentage): ";
+ cin >> interestRate;
+ users[userIndex].balance += users[userIndex].balance * (interestRate / 100);
+ cout << "Interest applied. New balance: " << users[userIndex].balance << endl;
+}
+void transferMoney(int userIndex) {
+ string recipientAccount;
+ double amount;
+ cout << "\nEnter recipient's account number: ";
+ cin >> recipientAccount;
+ int recipientIndex = -1;
+ for (int i = 0; i < userCount; i++) {
+ if (users[i].accountNumber == recipientAccount) {
+ recipientIndex = i;
+ break;
+ }
+ }
+ if (recipientIndex == -1) {
+ cout << "Recipient account not found!\n";
+ return;
+ }
+ cout << "Enter amount to transfer: ";
+ cin >> amount;
+ if (amount > users[userIndex].balance) {
+ cout << "Insufficient balance!\n";
+ }
+ else {
+ users[userIndex].balance -= amount;
+ users[recipientIndex].balance += amount;
+ cout << "Transfer successful! New balance: " << users[userIndex].balance << endl;
+ saveUsers();
+ }
+}
+void mainMenu() {
+ string choice;
+ while (true) {
+ cout << "---------------------------------" << endl;
+ cout << " Bank Account Management System" << endl;
+ cout << "---------------------------------" << endl;
+ cout << "1. Register\n2. Login\n3. Exit\nChoose an option: ";
+ cin >> choice;
+ if (choice == "1") {
+ registerUser();
+ }
+ else if (choice == "2") {
+ string username, password;
+ cout << "\nEnter username: ";
+ cin >> username;
+ cout << "Enter password: ";
+ cin >> password;
+ if (authenticate(username, password)) {int currentUserIndex = findUserIndex(username);
+ cout << "\nLogin successful!\n\n";
+ int pinAttempts = 0;
+ while (true) {
+ int pin;
+string pinInput;
+cout << "Enter your 4-digit pin: ";
+ cin >> pinInput;
+pin = stoi(pinInput);
+if (pin == users[currentUserIndex].pin) {
+ break;
+ }
+else {
+ pinAttempts++;
+ if (pinAttempts >= 3) {
+ cout << "Too many incorrect attempts. Exiting...\n";
+return;
+ }
+cout << "Incorrect pin. Try again.\n";
+ }
+ }
+ while (true) {
+ string choose;
+cout << "\nUser Menu\n1. Change Profile\n2. View Account\n3. Banking
+Options\n4. Logout\nChoose an option: ";
+ cin >> choose;
+ if (choose == "1") {
+ changeProfile(currentUserIndex);
+saveUsers();
+ }
+ else if (choose == "2") {
+ viewAccount(currentUserIndex);
+ }
+else if (choose == "3") {
+ while (true) {
+ cout << "\nBanking Options\n1. Change PIN\n2. Delete
+Account\n3. Deposit\n4. Withdraw\n5. Loan\n6. Pay Bills\n7. Savings Account\n8. Transfer
+Money\n9. Back to User Menu\nChoose an option: ";
+ cin >> choice;
+ if (choice == "1") {
+ changePin(currentUserIndex);
+ saveUsers();
+ }
+else if (choice == "2") {
+ deleteAccount(currentUserIndex);
+saveUsers();
+break;
+ }
+else if (choice == "3") {
+ deposit(currentUserIndex);
+ saveUsers();
+ }
+else if (choice == "4") {
+ withdraw(currentUserIndex);saveUsers();
+ }
+ else if (choice == "5") {
+ loan(currentUserIndex);
+saveUsers();
+ }
+else if (choice == "6") {
+ payBills(currentUserIndex);
+saveUsers();
+ }
+else if (choice == "7") {
+ savingsAccount(currentUserIndex);
+saveUsers();
+ }
+else if (choice == "8") {
+ transferMoney(currentUserIndex);
+saveUsers();
+ }
+else if (choice == "9") {
+ break;
+ }
+else {
+ cout << "Invalid option. Please try again.\n";
+ }
+ }
+ }
+else if (choose == "4") {
+ currentUserIndex = -1;
+break;
+ }
+else {
+ cout << "Invalid option. Please try again.\n";
+ }
+ }
+ }
+ else {
+ cout << "Invalid username or password. Please try again.\n";
+ }
+ }
+ else if (choice == "3") {
+ cout << "Exiting the program\n";
+ break;
+ }
+ else {
+ cout << "Invalid option. Please try again.\n";
+ }
+ }
+}
+int main() {
+ loadUsers();
+ mainMenu();
+ system("pause");
+ return 0;
+}
